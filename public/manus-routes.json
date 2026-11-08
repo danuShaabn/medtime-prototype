@@ -1,0 +1,27 @@
+{
+  "viewports": [
+    { "name": "mobile", "width": 390, "height": 844 },
+    { "name": "desktop", "width": 1440, "height": 900 }
+  ],
+  "routes": [
+    { "path": "/", "title": "MedTime — redirecționare" },
+    { "path": "/onboarding", "title": "Splash și onboarding" },
+    { "path": "/autentificare", "title": "Autentificare și înregistrare" },
+    { "path": "/acasa", "title": "Acasă" },
+    { "path": "/medici", "title": "Listă medici" },
+    { "path": "/medici/:id", "title": "Profil medic" },
+    { "path": "/calendar", "title": "Calendar și ore libere" },
+    { "path": "/confirmare", "title": "Confirmare programare" },
+    { "path": "/succes", "title": "Programare confirmată" },
+    { "path": "/programari", "title": "Programările mele" },
+    { "path": "/profil", "title": "Profil" },
+    { "path": "/medic", "title": "Programul meu" },
+    { "path": "/medic/blocare", "title": "Blocare ore" },
+    { "path": "/admin", "title": "Medici și clinici" },
+    { "path": "/admin/rapoarte", "title": "Rapoarte" },
+    { "path": "/admin/recenzii", "title": "Recenzii" },
+    { "path": "/eroare/fara-conexiune", "title": "Fără conexiune la internet" },
+    { "path": "/eroare/ora-indisponibila", "title": "Ora nu mai este disponibilă" },
+    { "path": "/eroare/serviciu-indisponibil", "title": "Serviciu indisponibil" }
+  ]
+}
