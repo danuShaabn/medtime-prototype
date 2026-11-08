@@ -58,7 +58,7 @@ button:disabled{cursor:not-allowed;opacity:.55}
 .doctor-avatar--hero{width:92px;height:92px;border-radius:28px;font-size:26px}
 .doctor-avatar--blue{background:#e4f1f8;color:#33748f}.doctor-avatar--teal{background:#e1f4f1;color:#20877c}.doctor-avatar--coral{background:#fff0e9;color:#bf7053}.doctor-avatar--lavender{background:#f0ebfa;color:#7862a0}.doctor-avatar--mint{background:#e9f5e7;color:#548750}.doctor-avatar--peach{background:#fff1e7;color:#b8774e}
 .avatar-dot{position:absolute;right:5px;bottom:5px;width:8px;height:8px;border:2px solid #fff;border-radius:50%;background:#4db88b}
-.doctor-card{padding:17px;border:1px solid var(--line);border-radius:19px;background:#fff;box-shadow:0 5px 16px rgba(21,59,86,.035);transition:transform .18s ease,box-shadow .18s ease}
+.doctor-card{display:block;padding:17px;border:1px solid var(--line);border-radius:19px;background:#fff;box-shadow:0 5px 16px rgba(21,59,86,.035);transition:transform .18s ease,box-shadow .18s ease}
 .doctor-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
 .doctor-card-top{display:flex;align-items:flex-start;gap:13px}
 .doctor-card-name{min-width:0;flex:1}
