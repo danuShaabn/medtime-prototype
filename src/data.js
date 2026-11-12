@@ -96,11 +96,18 @@ export const demoToday = '2026-11-08';
 export const timeSlots = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '13:00', '14:00', '14:30', '15:00', '16:00'];
 export const occupiedSlots = ['09:30', '11:30', '14:00'];
 
-export const calendarDays = [
-  { key: '2026-11-06', day: 'Vin', date: '6', label: 'Vineri, 6 noiembrie', past: true },
-  { key: '2026-11-07', day: 'Sâm', date: '7', label: 'Sâmbătă, 7 noiembrie', past: true },
-  { key: '2026-11-08', day: 'Dum', date: '8', label: 'Duminică, 8 noiembrie', past: false },
-  { key: '2026-11-09', day: 'Lun', date: '9', label: 'Luni, 9 noiembrie', past: false },
-  { key: '2026-11-10', day: 'Mar', date: '10', label: 'Marți, 10 noiembrie', past: false },
-  { key: '2026-11-11', day: 'Mie', date: '11', label: 'Miercuri, 11 noiembrie', past: false },
-];
+const weekdayShort = ['Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm', 'Dum'];
+const weekdayLong = ['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă', 'Duminică'];
+
+/** Două săptămâni (2–15 noiembrie 2026, luni–duminică); zilele dinaintea datei demo sunt trecute. */
+export const calendarDays = Array.from({ length: 14 }, (_, index) => {
+  const date = index + 2;
+  const key = `2026-11-${String(date).padStart(2, '0')}`;
+  return {
+    key,
+    day: weekdayShort[index % 7],
+    date: String(date),
+    label: `${weekdayLong[index % 7]}, ${date} noiembrie`,
+    past: key < demoToday,
+  };
+});

@@ -17,6 +17,7 @@ import {
   Mail,
   MapPin,
   Phone,
+  Search,
   ShieldCheck,
   Star,
   Stethoscope,
@@ -89,7 +90,12 @@ export function AuthPage() {
       <Field label={method === 'telefon' ? 'Număr de telefon' : 'Adresă de e-mail'} icon={method === 'telefon' ? Phone : Mail} type={method === 'email' ? 'email' : 'tel'} placeholder={method === 'telefon' ? '+373 60 123 456' : 'nume@email.md'} value={value} onChange={(event) => { setValue(event.target.value); setError(''); setResetMessage(''); }} error={error} />
       <Button type="submit" className="auth-submit">Continuă <ArrowRight size={18} /></Button>
     </form>
-    {mode === 'intrare' && <div className="forgot-password"><button type="button" onClick={() => setResetMessage(method === 'telefon' ? 'Introdu numărul de telefon valid și îți vom trimite instrucțiunile de resetare.' : 'Introdu adresa de e-mail validă și îți vom trimite instrucțiunile de resetare.')}>Ai uitat parola?</button>{resetMessage && <p role="status">{resetMessage}</p>}</div>}
+    {mode === 'intrare' && <div className="forgot-password"><button type="button" onClick={() => {
+      const normalized = value.replace(/[\s()-]/g, '');
+      const valid = method === 'telefon' ? /^(?:\+373\d{8}|0\d{8})$/.test(normalized) : /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
+      if (valid) setResetMessage(method === 'telefon' ? `Ți-am trimis prin SMS un cod de resetare a parolei la ${value.trim()}. Codul este valabil 10 minute.` : `Ți-am trimis un link de resetare a parolei la ${value.trim()}. Verifică și dosarul Spam.`);
+      else setResetMessage(method === 'telefon' ? 'Introdu mai sus numărul de telefon al contului, apoi apasă din nou „Ai uitat parola?”. Îți vom trimite prin SMS un cod de resetare.' : 'Introdu mai sus adresa de e-mail a contului, apoi apasă din nou „Ai uitat parola?”. Îți vom trimite un link de resetare.');
+    }}>Ai uitat parola?</button>{resetMessage && <p className="forgot-password-message" role="status">{resetMessage}</p>}</div>}
     <div className="privacy-note"><ShieldCheck size={17} /><span>Datele tale personale sunt păstrate în siguranță.</span></div>
     <p className="auth-terms">Continuând, accepți <a href="#termeni">termenii de utilizare</a> și <a href="#confidentialitate">politica de confidențialitate</a>.</p>
   </AppShell>;
@@ -120,7 +126,7 @@ export function HomePage() {
 
 export function DoctorsPage() {
   const location = useLocation();
-  const { doctors: availableDoctors, blocks, schedule } = useAppState();
+  const { doctors: availableDoctors, clinics, blocks, schedule } = useAppState();
   const [filter, setFilter] = useState('Toți medicii');
   const [query, setQuery] = useState(() => new URLSearchParams(location.search).get('q') || '');
   const [showFilters, setShowFilters] = useState(false);
@@ -129,7 +135,7 @@ export function DoctorsPage() {
   const [ratingFloor, setRatingFloor] = useState('');
   const [clinicFilter, setClinicFilter] = useState('');
   const filters = ['Toți medicii', 'Disponibili azi', 'Rating 4.8+', 'Preț sub 600 lei'];
-  const clinicOptions = [...new Set(availableDoctors.map((doctor) => doctor.clinic))];
+  const clinicOptions = [...new Set([...clinics.map((clinic) => clinic.name), ...availableDoctors.map((doctor) => doctor.clinic)])];
   const filtered = availableDoctors.filter((doctor) => {
     if (!doctor.active) return false;
     const matchesQuery = `${doctor.name} ${doctor.specialty}`.toLowerCase().includes(query.toLowerCase());
@@ -147,7 +153,7 @@ export function DoctorsPage() {
   });
   return <AppShell wide activeNav="home" className="doctors-page">
     <section className="doctors-intro"><div><span className="eyebrow">Modus Vivendi · Chișinău</span><h1>Găsește medicul potrivit</h1><p>Alege un specialist și găsește un moment potrivit pentru tine.</p></div><div className="doctors-count"><b>{filtered.length}</b><span>specialiști disponibili</span></div></section>
-    <div className="doctor-search-row"><SearchField value={query} onChange={setQuery} placeholder="Caută medic sau specialitate" /><button className="filter-button" aria-expanded={showFilters} onClick={() => setShowFilters(!showFilters)}><span className="filter-symbol">☷</span> Filtre <span className="filter-count">{Number(Boolean(specialtyFilter)) + Number(Boolean(clinicFilter)) + Number(Boolean(priceLimit)) + Number(Boolean(ratingFloor))}</span></button></div>
+    <div className="doctor-search-row"><SearchField value={query} onChange={setQuery} placeholder="Caută medic" /><button className="filter-button" aria-expanded={showFilters} onClick={() => setShowFilters(!showFilters)}><span className="filter-symbol">☷</span> Filtre <span className="filter-count">{Number(Boolean(specialtyFilter)) + Number(Boolean(clinicFilter)) + Number(Boolean(priceLimit)) + Number(Boolean(ratingFloor))}</span></button></div>
     {showFilters && <div className="advanced-filter-panel">
       <label><span>Specialitate</span><select value={specialtyFilter} onChange={(event) => setSpecialtyFilter(event.target.value)}><option value="">Toate specialitățile</option>{specialties.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</select></label>
       <label><span>Clinică</span><select value={clinicFilter} onChange={(event) => setClinicFilter(event.target.value)}><option value="">Toate clinicile</option>{clinicOptions.map((clinic) => <option key={clinic} value={clinic}>{clinic}</option>)}</select></label>
@@ -156,7 +162,7 @@ export function DoctorsPage() {
     </div>}
     <div className="filter-chips" role="group" aria-label="Filtre rapide">{filters.map((item) => <button key={item} className={`filter-chip ${filter === item ? 'is-active' : ''}`} onClick={() => setFilter(item)}>{item}</button>)}</div>
     <div className="results-caption"><span>Medici recomandați</span><button>Sortare: <b>Recomandați</b><ChevronRight size={15} /></button></div>
-    <div className="doctor-list">{filtered.length ? filtered.map((doctor) => <DoctorCard key={doctor.id} doctor={doctor} />) : <div className="empty-state"><Search size={24} /><b>Nu am găsit medici</b><span>Încearcă altă căutare sau alt filtru.</span><button onClick={() => { setFilter('Toți medicii'); setQuery(''); setSpecialtyFilter(''); setPriceLimit(''); setRatingFloor(''); setClinicFilter(''); }}>Resetează filtrele</button></div>}</div>
+    <div className="doctor-list">{filtered.length ? filtered.map((doctor) => <DoctorCard key={doctor.id} doctor={{ ...doctor, availability: displayAvailability(doctor, blocks, schedule) }} />) : <div className="empty-state"><Search size={24} /><b>Nu am găsit medici</b><span>Încearcă altă căutare sau alt filtru.</span><button onClick={() => { setFilter('Toți medicii'); setQuery(''); setSpecialtyFilter(''); setPriceLimit(''); setRatingFloor(''); setClinicFilter(''); }}>Resetează filtrele</button></div>}</div>
   </AppShell>;
 }
 
@@ -180,19 +186,19 @@ export function CalendarPage() {
   const navigate = useNavigate();
   const { doctors: availableDoctors, blocks, schedule } = useAppState();
   const doctor = availableDoctors.find((item) => item.id === location.state?.doctorId) || getDoctor(location.state?.doctorId);
-  const [selectedDay, setSelectedDay] = useState(2);
-  const [selectedTime, setSelectedTime] = useState('10:00');
+  const [selectedDay, setSelectedDay] = useState(() => Math.max(0, calendarDays.findIndex((item) => !item.past)));
   const date = calendarDays[selectedDay];
   const isPast = date.past;
   const slotUnavailableOn = (dateKey, time) => occupiedSlots.includes(time)
     || (doctor.id === sessionDoctorId && schedule.some((visit) => visit.date === dateKey && visit.time === time && isOpenVisit(visit)))
     || isSlotBlocked(blocks, doctor.id, dateKey, time);
+  const [selectedTime, setSelectedTime] = useState(() => (slotUnavailableOn(date.key, '10:00') ? timeSlots.find((time) => !slotUnavailableOn(date.key, time)) || '' : '10:00'));
   const slotUnavailable = (time) => slotUnavailableOn(date.key, time);
   const selectedUnavailable = isPast || slotUnavailable(selectedTime);
   return <AppShell wide activeNav="home" className="calendar-page">
     <div className="booking-progress"><span className="progress-step is-done"><i>1</i><b>Medic</b></span><span className="progress-line is-done" /><span className="progress-step is-current"><i>2</i><b>Data și ora</b></span><span className="progress-line" /><span className="progress-step"><i>3</i><b>Confirmare</b></span></div>
     <section className="calendar-heading"><div><span className="eyebrow">Alege un interval</span><h1>Când îți este comod?</h1><p>Orele disponibile pentru <b>{doctor.name}</b></p></div><div className="selected-doctor-mini"><DoctorAvatar doctor={doctor} size="small" /><div><b>{doctor.name}</b><span>{doctor.specialty}</span></div></div></section>
-    <div className="calendar-layout"><section className="calendar-card"><div className="month-heading"><button className="icon-button" aria-label="Luna anterioară" disabled><ArrowLeft size={18} /></button><h2>Noiembrie 2026</h2><button className="icon-button" aria-label="Luna următoare" disabled><ArrowRight size={18} /></button></div><div className="date-strip">{calendarDays.map((item, index) => <button type="button" className={`date-option ${selectedDay === index ? 'is-selected' : ''}`} key={item.key} disabled={item.past} aria-label={`${item.label}${item.past ? ', dată trecută' : ''}`} onClick={() => { setSelectedDay(index); const available = timeSlots.find((time) => !slotUnavailableOn(item.key, time)); if (slotUnavailableOn(item.key, selectedTime)) setSelectedTime(available || ''); }}><span>{item.day}</span><b>{item.date}</b><i /></button>)}</div><div className="availability-caption"><span><i className="legend-dot legend-dot--free" />Disponibil</span><span><i className="legend-dot legend-dot--busy" />Ocupat</span></div><h3 className="time-heading">Ore disponibile <span>{date.label}</span></h3><div className="time-grid">{timeSlots.map((time) => {
+    <div className="calendar-layout"><section className="calendar-card"><div className="month-heading"><button className="icon-button" aria-label="Luna anterioară" disabled><ArrowLeft size={18} /></button><h2>Noiembrie 2026</h2><button className="icon-button" aria-label="Luna următoare" disabled><ArrowRight size={18} /></button></div><div className="date-strip">{calendarDays.map((item, index) => <button type="button" className={`date-option ${selectedDay === index ? 'is-selected' : ''}`} key={item.key} disabled={item.past} aria-label={`${item.label}${item.past ? ', dată trecută' : ''}`} onClick={() => { setSelectedDay(index); const available = timeSlots.find((time) => !slotUnavailableOn(item.key, time)); if (!selectedTime || slotUnavailableOn(item.key, selectedTime)) setSelectedTime(available || ''); }}><span>{item.day}</span><b>{item.date}</b><i /></button>)}</div><div className="availability-caption"><span><i className="legend-dot legend-dot--free" />Disponibil</span><span><i className="legend-dot legend-dot--busy" />Ocupat</span></div><h3 className="time-heading">Ore disponibile <span>{date.label}</span></h3><div className="time-grid">{timeSlots.map((time) => {
       const occupied = isPast || slotUnavailable(time);
       return <button type="button" key={time} disabled={occupied} className={`time-slot ${occupied ? 'is-occupied' : ''} ${selectedTime === time ? 'is-selected' : ''}`} onClick={() => setSelectedTime(time)}>{time}</button>;
     })}</div><p className="calendar-note"><Clock3 size={15} /> Orele sunt afișate în fusul orar local al clinicii.</p></section>
@@ -204,15 +210,16 @@ export function CalendarPage() {
 export function ConfirmPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { doctors: availableDoctors } = useAppState();
   const booking = location.state || {};
-  const doctor = getDoctor(booking.doctorId);
+  const doctor = availableDoctors.find((item) => item.id === booking.doctorId) || getDoctor(booking.doctorId);
   const date = booking.date || 'Marți, 27 octombrie';
   const time = booking.time || '10:30';
   return <AppShell activeNav="home" showNav={false} className="confirm-page">
-    <div className="flow-topbar"><Link className="back-link" to="/calendar"><ArrowLeft size={18} /> Înapoi</Link><Brand small /><span className="secure-indicator"><ShieldCheck size={15} /> Securizat</span></div>
+    <div className="flow-topbar"><Link className="back-link" to="/calendar" state={{ doctorId: doctor.id }}><ArrowLeft size={18} /> Înapoi</Link><Brand small /><span className="secure-indicator"><ShieldCheck size={15} /> Securizat</span></div>
     <div className="booking-progress booking-progress--compact"><span className="progress-step is-done"><i><Check size={13} /></i><b>Medic</b></span><span className="progress-line is-done" /><span className="progress-step is-done"><i><Check size={13} /></i><b>Data și ora</b></span><span className="progress-line is-done" /><span className="progress-step is-current"><i>3</i><b>Confirmare</b></span></div>
     <PageHeading eyebrow="Ultimul pas" title="Confirmă programarea" description="Verifică detaliile înainte de confirmare." />
-    <section className="confirmation-card"><div className="confirmation-doctor"><DoctorAvatar doctor={doctor} size="large" /><div><span className="appointment-kind">Consultație · {doctor.specialty}</span><h2>{doctor.name}</h2><span className="confirmed-rating"><Star size={14} fill="currentColor" /> {doctor.rating} · {doctor.experience}</span></div></div><div className="confirmation-divider" /><div className="confirmation-details"><div><CalendarDays size={18} /><span>Data</span><b>{date}</b></div><div><Clock3 size={18} /><span>Ora</span><b>{time}</b></div><div><MapPin size={18} /><span>Clinica</span><b>Modus Vivendi, Chișinău</b></div></div><div className="confirmation-price"><span>Prețul consultației</span><b>{formatPrice(doctor.price)}</b></div></section>
+    <section className="confirmation-card"><div className="confirmation-doctor"><DoctorAvatar doctor={doctor} size="large" /><div><span className="appointment-kind">Consultație · {doctor.specialty}</span><h2>{doctor.name}</h2><span className="confirmed-rating"><Star size={14} fill="currentColor" /> {doctor.rating} · {doctor.experience}</span></div></div><div className="confirmation-divider" /><div className="confirmation-details"><div><CalendarDays size={18} /><span>Data</span><b>{date}</b></div><div><Clock3 size={18} /><span>Ora</span><b>{time}</b></div><div><MapPin size={18} /><span>Clinica</span><b>{doctor.clinic || 'Modus Vivendi'}, Chișinău</b></div></div><div className="confirmation-price"><span>Prețul consultației</span><b>{formatPrice(doctor.price)}</b></div></section>
     <div className="confirmation-reminder"><Bell size={18} /><p>Îți vom trimite o reamintire înainte de vizită, prin notificare sau SMS.</p><Check size={18} /></div>
     <Button className="confirm-button" onClick={() => navigate('/succes', { state: { doctorId: doctor.id, date, time } })}>Confirmă programarea <ArrowRight size={18} /></Button>
     <p className="cancel-note">Poți anula sau reprograma vizita din secțiunea „Programările mele”.</p>
@@ -222,15 +229,16 @@ export function ConfirmPage() {
 export function SuccessPage() {
   const location = useLocation();
   const [added, setAdded] = useState(false);
+  const { doctors: availableDoctors } = useAppState();
   const booking = location.state || {};
-  const doctor = getDoctor(booking.doctorId);
+  const doctor = availableDoctors.find((item) => item.id === booking.doctorId) || getDoctor(booking.doctorId);
   const date = booking.date || 'Marți, 27 octombrie';
   const time = booking.time || '10:30';
   return <AppShell showNav={false} className="success-page">
     <div className="success-brand"><Brand /></div>
     <div className="success-art"><span className="success-circle"><Check size={43} strokeWidth={2.7} /></span><span className="success-star star-a">✦</span><span className="success-star star-b">✧</span><span className="success-star star-c">✦</span></div>
     <div className="success-copy"><span className="eyebrow">Totul este pregătit</span><h1>Programarea a fost confirmată</h1><p>Am rezervat intervalul pentru tine. Detaliile sunt mai jos.</p></div>
-    <section className="success-booking-card"><div className="success-doctor"><DoctorAvatar doctor={doctor} /><div><b>{doctor.name}</b><span>{doctor.specialty}</span></div></div><div className="success-details"><span><CalendarDays size={16} /> {date}</span><span><Clock3 size={16} /> {time}</span><span><MapPin size={16} /> Modus Vivendi, Chișinău</span></div><div className="success-price"><span>De achitat la clinică</span><b>{formatPrice(doctor.price)}</b></div></section>
+    <section className="success-booking-card"><div className="success-doctor"><DoctorAvatar doctor={doctor} /><div><b>{doctor.name}</b><span>{doctor.specialty}</span></div></div><div className="success-details"><span><CalendarDays size={16} /> {date}</span><span><Clock3 size={16} /> {time}</span><span><MapPin size={16} /> {doctor.clinic || 'Modus Vivendi'}, Chișinău</span></div><div className="success-price"><span>De achitat la clinică</span><b>{formatPrice(doctor.price)}</b></div></section>
     <Button variant={added ? 'success' : 'outline'} onClick={() => setAdded(true)} icon={added ? Check : CalendarDays}>{added ? 'Adăugat în calendar' : 'Adaugă în calendar'}</Button>
     <Button to="/programari" variant="text" className="success-secondary">Vezi programările mele <ArrowRight size={17} /></Button>
   </AppShell>;

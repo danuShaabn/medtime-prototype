@@ -81,7 +81,7 @@ export function SchedulePage() {
 }
 
 export function BlockHoursPage() {
-  const { blocks, schedule, addBlock, removeBlock } = useAppState();
+  const { blocks, schedule, addBlock, removeBlock, cancelVisit } = useAppState();
   const [date, setDate] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -90,7 +90,8 @@ export function BlockHoursPage() {
   const [pending, setPending] = useState(null);
   const mine = blocks.filter((block) => block.doctorId === sessionDoctorId).slice().sort((a, b) => `${a.date}${a.from}`.localeCompare(`${b.date}${b.from}`));
 
-  const saveBlock = (block) => {
+  const saveBlock = (block, overlaps = []) => {
+    overlaps.forEach((visit) => cancelVisit(visit.id));
     addBlock(block);
     setPending(null);
     setDate('');
@@ -108,6 +109,9 @@ export function BlockHoursPage() {
     if (from && to && to < from) nextErrors.range = 'Ora de final este înainte de ora de început.';
     else if (from && to && to === from) nextErrors.range = 'Ora de final trebuie să fie după ora de început.';
     if (!reason) nextErrors.reason = 'Alege motivul blocării.';
+    if (!nextErrors.range && date && from && to && blocks.some((block) => block.doctorId === sessionDoctorId && block.date === date && from < block.to && block.from < to)) {
+      nextErrors.range = 'Intervalul se suprapune cu unul deja blocat.';
+    }
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
       setPending(null);
@@ -125,20 +129,26 @@ export function BlockHoursPage() {
   return <AppShell activeNav="blocks" className="block-page">
     <PageHeading eyebrow="Disponibilitate" title="Blocare ore" description="Orele blocate nu mai sunt oferite pacienților la programare." />
     <form className="block-form" onSubmit={submit} noValidate>
-      <Field label="Data" type="date" value={date} onChange={(event) => { setDate(event.target.value); setPending(null); }} error={errors.date} />
+      <Field label="Data" error={errors.date}>
+        <select value={date} onChange={(event) => { setDate(event.target.value); setErrors((current) => ({ ...current, date: undefined })); setPending(null); }} aria-label="Data" aria-invalid={Boolean(errors.date) || undefined}>
+          <option value="">Alege data</option>
+          {scheduleDays.map((day) => <option key={day.key} value={day.key}>{day.label}</option>)}
+        </select>
+      </Field>
       <div className="block-form-times">
         <Field label="De la ora" error={errors.from} invalid={Boolean(errors.range)}>
-          <select value={from} onChange={(event) => { setFrom(event.target.value); setPending(null); }} aria-label="De la ora">
+          <select value={from} onChange={(event) => { setFrom(event.target.value); setErrors((current) => ({ ...current, from: undefined, range: undefined })); setPending(null); }} aria-label="De la ora" aria-invalid={Boolean(errors.from || errors.range) || undefined}>
             <option value="">Alege ora</option>
             {hours.map((hour) => <option key={hour} value={hour}>{hour}</option>)}
           </select>
         </Field>
-        <Field label="Până la ora" error={errors.to || errors.range}>
-          <select value={to} onChange={(event) => { setTo(event.target.value); setPending(null); }} aria-label="Până la ora">
+        <Field label="Până la ora" error={errors.to} invalid={Boolean(errors.range)}>
+          <select value={to} onChange={(event) => { setTo(event.target.value); setErrors((current) => ({ ...current, to: undefined, range: undefined })); setPending(null); }} aria-label="Până la ora" aria-invalid={Boolean(errors.to || errors.range) || undefined}>
             <option value="">Alege ora</option>
             {hours.map((hour) => <option key={hour} value={hour}>{hour}</option>)}
           </select>
         </Field>
+        {errors.range && <p className="field-error block-range-error" role="alert">{errors.range}</p>}
       </div>
       <Field label="Motiv" error={errors.reason}>
         <select value={reason} onChange={(event) => setReason(event.target.value)} aria-label="Motiv">
@@ -147,12 +157,12 @@ export function BlockHoursPage() {
           <option value="Altul">Altul</option>
         </select>
       </Field>
-      <p className="form-hint">În demonstrație, 8 noiembrie are programări, iar 10 noiembrie este o zi fără vizite.</p>
+      <p className="form-hint">Exemplu: 8 noiembrie are programări (vei vedea avertismentul), iar 10 noiembrie este o zi fără vizite.</p>
       {pending && <div className="warning-panel" role="alert">
-        <b>Există deja o programare în acest interval.</b>
-        <p>{pending.overlaps.map((visit) => `${visit.patient} la ${visit.time}`).join(', ')}. Pacientul are deja o vizită. Poți bloca intervalul doar după acest avertisment.</p>
+        <b>{pending.overlaps.length === 1 ? 'Există deja o programare în acest interval.' : `Există deja ${pending.overlaps.length} programări în acest interval.`}</b>
+        <p>{pending.overlaps.map((visit) => `${visit.patient} la ${visit.time}`).join(', ')}. Dacă blochezi intervalul, programarea devine „Anulată de medic”, iar pacientul este notificat și i se oferă reprogramare.</p>
         <div className="row-actions">
-          <Button type="button" onClick={() => saveBlock(pending.block)}>Blochează oricum</Button>
+          <Button type="button" onClick={() => saveBlock(pending.block, pending.overlaps)}>Blochează și anulează</Button>
           <Button type="button" variant="outline" onClick={() => setPending(null)}>Renunță</Button>
         </div>
       </div>}
@@ -161,7 +171,7 @@ export function BlockHoursPage() {
     <section className="blocked-section">
       <h2>Intervale blocate</h2>
       {mine.length ? <div className="visit-list">{mine.map((block) => <article className="blocked-card" key={block.id}>
-        <div><b>{formatDemoDate(block.date)}</b><span>{block.from}–{block.to} · {block.reason}</span></div>
+        <div><b>{scheduleDays.find((day) => day.key === block.date)?.label || formatDemoDate(block.date)}</b><span>{block.from}–{block.to} · {block.reason}</span></div>
         <Button type="button" variant="outline" size="small" onClick={() => removeBlock(block.id)}>Deblochează</Button>
       </article>)}</div> : <div className="empty-state"><b>Nu ai intervale blocate.</b><span>Intervalele blocate dispar din orele libere ale pacientului.</span></div>}
     </section>
@@ -332,7 +342,7 @@ const specialtyBars = [
 ];
 
 function ColumnChart({ items, caption }) {
-  const width = 360;
+  const width = 330;
   const height = 150;
   const max = Math.max(...items.map((item) => item.value));
   const gap = 12;
@@ -344,31 +354,23 @@ function ColumnChart({ items, caption }) {
       const x = gap + index * (barWidth + gap);
       const y = height - barHeight;
       return <g key={item.label}>
-        <text x={x + barWidth / 2} y={y - 6} textAnchor="middle" fontSize="13" fontFamily="Inter, Arial, sans-serif" fill="#153b56">{item.value}</text>
-        <rect x={x} y={y} width={barWidth} height={barHeight} rx="5" fill="#1b9aaa" />
-        <text x={x + barWidth / 2} y={height + 18} textAnchor="middle" fontSize="12" fontFamily="Inter, Arial, sans-serif" fill="#557181">{item.label}</text>
+        <text x={x + barWidth / 2} y={y - 6} textAnchor="middle" fontSize="15" fontWeight="700" fontFamily="Inter, Arial, sans-serif" fill="#153b56">{item.value}</text>
+        <rect x={x} y={y} width={barWidth} height={barHeight} rx="5" fill="#14808d" />
+        <text x={x + barWidth / 2} y={height + 18} textAnchor="middle" fontSize="14" fontFamily="Inter, Arial, sans-serif" fill="#557181">{item.label}</text>
       </g>;
     })}
   </svg>;
 }
 
 function HorizontalChart({ items, caption }) {
-  const width = 460;
-  const row = 36;
-  const height = items.length * row;
   const max = Math.max(...items.map((item) => item.value));
-  return <svg className="chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={caption}>
-    <title>{caption}</title>
-    {items.map((item, index) => {
-      const y = index * row;
-      const barWidth = (item.value / max) * 168;
-      return <g key={item.label}>
-        <text x="168" y={y + 23} textAnchor="end" fontSize="14" fontFamily="Inter, Arial, sans-serif" fill="#153b56">{item.label}</text>
-        <rect x="180" y={y + 8} width={barWidth} height="18" rx="5" fill="#1b9aaa" />
-        <text x={188 + barWidth} y={y + 22} fontSize="14" fontFamily="Inter, Arial, sans-serif" fill="#153b56">{item.value}</text>
-      </g>;
-    })}
-  </svg>;
+  return <div className="bar-list" role="img" aria-label={caption}>
+    {items.map((item) => <div className="bar-row" key={item.label}>
+      <span className="bar-label">{item.label}</span>
+      <span className="bar-track"><span className="bar-fill" style={{ width: `${(item.value / max) * 100}%` }} /></span>
+      <b className="bar-value">{item.value}</b>
+    </div>)}
+  </div>;
 }
 
 export function ReportsPage() {

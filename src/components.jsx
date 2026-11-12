@@ -25,8 +25,9 @@ const patientNavigation = [
 ];
 
 const doctorNavigation = [
-  { id: 'schedule', label: 'Program', to: '/medic', icon: CalendarDays },
+  { id: 'schedule', label: 'Programul meu', to: '/medic', icon: CalendarDays },
   { id: 'blocks', label: 'Blocare ore', to: '/medic/blocare', icon: CalendarOff },
+  { id: 'profile', label: 'Profil', to: '/profil', icon: UserRound },
 ];
 
 const adminNavigation = [
@@ -75,7 +76,13 @@ export function AppShell({
 
   return <div className={shellClass}>
     {!bare && <>
-      {staff ? <header className="staff-topbar"><div className="staff-topbar-inner"><Brand /><span className="staff-role-label">{roleLabel}</span><LocationLabel desktop /></div></header> : <>
+      {staff ? <>
+        <header className="mobile-topbar staff-mobile-topbar">
+          <Brand small />
+          <div className="mobile-topbar-actions"><span className="staff-role-label">{roleLabel}</span><Link className={`icon-button${activeNav === 'profile' ? ' is-current' : ''}`} to="/profil" aria-label="Profil și schimbare rol"><UserRound size={18} /></Link></div>
+        </header>
+        <header className="staff-topbar"><div className="staff-topbar-inner"><Brand /><span className="staff-role-label">{roleLabel}</span><LocationLabel desktop /><Link className={`desktop-profile${activeNav === 'profile' ? ' is-current' : ''}`} to="/profil"><span className="mini-avatar">{role === 'medic' ? 'AP' : 'AD'}</span> Profil</Link></div></header>
+      </> : <>
         <header className="mobile-topbar">
           <Brand small />
           <div className="mobile-topbar-actions"><LocationLabel /><Link className="icon-button" to="/profil" aria-label="Profil"><UserRound size={18} /></Link></div>
