@@ -63,7 +63,8 @@ export function AppShell({
   className = '',
 }) {
   const { role } = useAppState();
-  const staff = role === 'medic' || role === 'administrator';
+  // Ecranele „bare” (onboarding, autentificare, erori) folosesc mereu layoutul pe tot ecranul.
+  const staff = !bare && (role === 'medic' || role === 'administrator');
   const navigation = role === 'medic' ? doctorNavigation : role === 'administrator' ? adminNavigation : patientNavigation;
   const roleLabel = role === 'medic' ? 'Spațiu medic' : 'Administrare';
   const shellClass = [
@@ -99,8 +100,8 @@ export function AppShell({
         </header>
       </>}
     </>}
-    {staff ? <div className="staff-frame">
-      {showNav && <nav className="side-nav" aria-label="Navigare administrare"><NavigationLinks items={navigation} activeNav={activeNav} side /></nav>}
+    {staff && showNav ? <div className="staff-frame">
+      <nav className="side-nav" aria-label="Navigare administrare"><NavigationLinks items={navigation} activeNav={activeNav} side /></nav>
       <main className="page-content">{children}</main>
     </div> : <main className="page-content">{children}</main>}
     {!bare && showNav && <nav className="bottom-nav" aria-label="Navigare principală"><NavigationLinks items={navigation} activeNav={activeNav} /></nav>}
