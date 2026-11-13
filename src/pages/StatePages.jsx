@@ -27,7 +27,7 @@ import { ErrorLayout } from './ErrorPages.jsx';
 import { ConfirmPage } from './FlowPages.jsx';
 
 /** Programarea de exemplu folosită în stările de eroare (după data demo, 8 noiembrie 2026). */
-const sampleBooking = { doctorId: 'ana-popescu', date: 'Marți, 10 noiembrie 2026', shortDate: '10 noiembrie', time: '10:30' };
+const sampleBooking = { doctorId: 'ana-popescu', date: 'Marți, 10 noiembrie', time: '10:30' };
 
 const phonePattern = /^(?:\+373\d{8}|0\d{8})$/;
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -107,7 +107,7 @@ export function AppRestartedPage() {
   const doctor = useBookingDoctor(sampleBooking.doctorId);
   return <ErrorLayout icon={RotateCcw} eyebrow="Am păstrat progresul" title="Aplicația a fost repornită" description="Aplicația s-a închis neașteptat. Poți continua programarea de unde ai rămas." className="state-page">
     <section className="error-related state-progress-card">
-      <div className="state-progress-head"><DoctorAvatar doctor={doctor} size="small" /><div><small>Programare începută</small><b>{doctor.name} · {sampleBooking.shortDate} · {sampleBooking.time}</b></div></div>
+      <div className="state-progress-head"><DoctorAvatar doctor={doctor} size="small" /><div><small>Programare începută</small><b>{doctor.name} · {sampleBooking.date} · {sampleBooking.time}</b></div></div>
       <div className="booking-progress booking-progress--compact" aria-label="Pasul 2 din 3: Data și ora">
         <span className="progress-step is-done"><i>1</i><b>Medic</b></span><span className="progress-line is-done" />
         <span className="progress-step is-current"><i>2</i><b>Data și ora</b></span><span className="progress-line" />
@@ -150,7 +150,7 @@ export function DoctorCancelledPage() {
         <div><b>{doctor.name}</b><span>{doctor.specialty} · {doctor.clinic || 'Modus Vivendi'}</span><s>{sampleBooking.date}, {sampleBooking.time}</s></div>
         <span className="status-badge status-badge--cancelled-by-doctor">Anulată de medic</span>
       </section>
-      <section className="alternative-card"><div className="alternative-title"><span><CalendarDays size={17} /> Miercuri, 11 noiembrie</span><span className="availability-label"><i /> Ore libere propuse</span></div><div className="alternative-slots">{['09:30', '11:00', '15:00'].map((time) => <button key={time} className={selected === time ? 'is-selected' : ''} aria-pressed={selected === time} onClick={() => setSelected(time)}>{time}</button>)}</div></section>
+      <section className="alternative-card"><div className="alternative-title"><span><CalendarDays size={17} /> Miercuri, 11 noiembrie</span><span className="availability-label"><i /> Ore libere propuse</span></div><div className="alternative-slots">{['09:00', '11:00', '13:00'].map((time) => <button key={time} className={selected === time ? 'is-selected' : ''} aria-pressed={selected === time} onClick={() => setSelected(time)}>{time}</button>)}</div></section>
     </div>
     <Button onClick={() => navigate('/calendar', { state: { doctorId: doctor.id } })} icon={CalendarDays}>Reprogramează</Button>
     <button className="error-text-link" onClick={() => navigate(`/medici?q=${encodeURIComponent(doctor.specialty)}`)}><ArrowLeft size={15} /> Alege alt medic</button>

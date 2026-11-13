@@ -76,15 +76,14 @@ export const specialties = [
 
 export const appointments = {
   Viitoare: [
-    { doctorId: 'ana-popescu', date: 'Marți, 27 octombrie', time: '10:30', type: 'Consultație cardiologică' },
-    { doctorId: 'mihai-rusu', date: 'Vineri, 30 octombrie', time: '15:00', type: 'Consultație de medicină internă' },
+    { doctorId: 'ana-popescu', date: 'Marți, 10 noiembrie', month: 'nov.', time: '10:30', type: 'Consultație cardiologică' },
+    { doctorId: 'mihai-rusu', date: 'Vineri, 13 noiembrie', month: 'nov.', time: '15:00', type: 'Consultație de medicină internă' },
   ],
   Trecute: [
-    { doctorId: 'elena-ciobanu', date: 'Luni, 12 octombrie', time: '09:30', type: 'Consultație dermatologică' },
+    { doctorId: 'elena-ciobanu', date: 'Marți, 20 octombrie', month: 'oct.', time: '11:00', type: 'Consultație dermatologică' },
   ],
   Anulate: [
     { doctorId: 'ana-popescu', date: 'Marți, 10 noiembrie', month: 'nov.', time: '10:30', type: 'Consultație cardiologică', status: 'Anulată de medic', byDoctor: true },
-    { doctorId: 'andrei-munteanu', date: 'Miercuri, 7 octombrie', time: '13:00', type: 'Consultație neurologică' },
   ],
 };
 
@@ -97,12 +96,12 @@ export const demoToday = '2026-11-08';
 export const timeSlots = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '13:00', '14:00', '14:30', '15:00', '16:00'];
 export const occupiedSlots = ['09:30', '11:30', '14:00'];
 
-const weekdayShort = ['Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm', 'Dum'];
-const weekdayLong = ['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă', 'Duminică'];
+const weekdayShort = ['Dum', 'Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm'];
+const weekdayLong = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă'];
 
-/** Două săptămâni (2–15 noiembrie 2026, luni–duminică); zilele dinaintea datei demo sunt trecute. */
+/** Două săptămâni din noiembrie 2026 (1–14, duminică–sâmbătă); 1–7 sunt în trecut, 8 este „azi”. */
 export const calendarDays = Array.from({ length: 14 }, (_, index) => {
-  const date = index + 2;
+  const date = index + 1;
   const key = `2026-11-${String(date).padStart(2, '0')}`;
   return {
     key,
@@ -110,5 +109,6 @@ export const calendarDays = Array.from({ length: 14 }, (_, index) => {
     date: String(date),
     label: `${weekdayLong[index % 7]}, ${date} noiembrie`,
     past: key < demoToday,
+    today: key === demoToday,
   };
 });

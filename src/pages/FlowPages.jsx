@@ -97,7 +97,7 @@ export function AuthPage() {
 export function HomePage() {
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
-  const nextVisit = { doctor: doctors[0], date: 'Marți, 27 octombrie', time: '10:30' };
+  const nextVisit = { doctor: doctors[0], date: 'Marți, 10 noiembrie', time: '10:30' };
   return <AppShell wide activeNav="home" className="home-page">
     <section className="home-hero">
       <div className="hero-copy"><span className="eyebrow">Clinica Modus Vivendi · Chișinău</span><h1>Grija pentru sănătatea ta, <em>mai simplă.</em></h1><p>Găsește medicul potrivit și programează-te când îți este comod.</p></div>
@@ -179,19 +179,19 @@ export function CalendarPage() {
   const navigate = useNavigate();
   const { doctors: availableDoctors, blocks, schedule } = useAppState();
   const doctor = availableDoctors.find((item) => item.id === location.state?.doctorId) || getDoctor(location.state?.doctorId);
-  const [selectedDay, setSelectedDay] = useState(() => Math.max(0, calendarDays.findIndex((item) => !item.past)));
+  const [selectedDay, setSelectedDay] = useState(() => Math.max(0, calendarDays.findIndex((item) => item.key === '2026-11-10')));
   const date = calendarDays[selectedDay];
   const isPast = date.past;
   const slotUnavailableOn = (dateKey, time) => occupiedSlots.includes(time)
-    || (doctor.id === sessionDoctorId && schedule.some((visit) => visit.date === dateKey && visit.time === time && isOpenVisit(visit)))
+    || (doctor.id === sessionDoctorId && schedule.some((visit) => visit.date === dateKey && visit.time === time && isOpenVisit(visit) && !visit.currentPatient))
     || isSlotBlocked(blocks, doctor.id, dateKey, time);
-  const [selectedTime, setSelectedTime] = useState(() => (slotUnavailableOn(date.key, '10:00') ? timeSlots.find((time) => !slotUnavailableOn(date.key, time)) || '' : '10:00'));
+  const [selectedTime, setSelectedTime] = useState(() => (slotUnavailableOn(date.key, '10:30') ? timeSlots.find((time) => !slotUnavailableOn(date.key, time)) || '' : '10:30'));
   const slotUnavailable = (time) => slotUnavailableOn(date.key, time);
   const selectedUnavailable = isPast || slotUnavailable(selectedTime);
   return <AppShell wide activeNav="home" className="calendar-page">
     <div className="booking-progress"><span className="progress-step is-done"><i>1</i><b>Medic</b></span><span className="progress-line is-done" /><span className="progress-step is-current"><i>2</i><b>Data și ora</b></span><span className="progress-line" /><span className="progress-step"><i>3</i><b>Confirmare</b></span></div>
     <section className="calendar-heading"><div><span className="eyebrow">Alege un interval</span><h1>Când îți este comod?</h1><p>Orele disponibile pentru <b>{doctor.name}</b></p></div><div className="selected-doctor-mini"><DoctorAvatar doctor={doctor} size="small" /><div><b>{doctor.name}</b><span>{doctor.specialty}</span></div></div></section>
-    <div className="calendar-layout"><section className="calendar-card"><div className="month-heading"><button className="icon-button" aria-label="Luna anterioară" disabled><ArrowLeft size={18} /></button><h2>Noiembrie 2026</h2><button className="icon-button" aria-label="Luna următoare" disabled><ArrowRight size={18} /></button></div><div className="date-strip">{calendarDays.map((item, index) => <button type="button" className={`date-option ${selectedDay === index ? 'is-selected' : ''}`} key={item.key} disabled={item.past} aria-label={`${item.label}${item.past ? ', dată trecută' : ''}`} onClick={() => { setSelectedDay(index); const available = timeSlots.find((time) => !slotUnavailableOn(item.key, time)); if (!selectedTime || slotUnavailableOn(item.key, selectedTime)) setSelectedTime(available || ''); }}><span>{item.day}</span><b>{item.date}</b><i /></button>)}</div><div className="availability-caption"><span><i className="legend-dot legend-dot--free" />Disponibil</span><span><i className="legend-dot legend-dot--busy" />Ocupat</span></div><h3 className="time-heading">Ore disponibile <span>{date.label}</span></h3><div className="time-grid">{timeSlots.map((time) => {
+    <div className="calendar-layout"><section className="calendar-card"><div className="month-heading"><button className="icon-button" aria-label="Luna anterioară" disabled><ArrowLeft size={18} /></button><h2>Noiembrie 2026</h2><button className="icon-button" aria-label="Luna următoare" disabled><ArrowRight size={18} /></button></div><div className="date-strip">{calendarDays.map((item, index) => <button type="button" className={`date-option${selectedDay === index ? ' is-selected' : ''}${item.today ? ' is-today' : ''}`} key={item.key} aria-current={item.today ? 'date' : undefined} disabled={item.past} aria-label={`${item.label}${item.past ? ', dată trecută' : ''}`} onClick={() => { setSelectedDay(index); const available = timeSlots.find((time) => !slotUnavailableOn(item.key, time)); if (!selectedTime || slotUnavailableOn(item.key, selectedTime)) setSelectedTime(available || ''); }}><span>{item.day}</span><b>{item.date}</b><i /></button>)}</div><div className="availability-caption"><span><i className="legend-dot legend-dot--free" />Disponibil</span><span><i className="legend-dot legend-dot--busy" />Ocupat</span></div><h3 className="time-heading">Ore disponibile <span>{date.label}</span></h3><div className="time-grid">{timeSlots.map((time) => {
       const occupied = isPast || slotUnavailable(time);
       return <button type="button" key={time} disabled={occupied} className={`time-slot ${occupied ? 'is-occupied' : ''} ${selectedTime === time ? 'is-selected' : ''}`} onClick={() => setSelectedTime(time)}>{time}</button>;
     })}</div><p className="calendar-note"><Clock3 size={15} /> Orele sunt afișate în fusul orar local al clinicii.</p></section>
@@ -206,14 +206,14 @@ export function ConfirmPage({ booking: presetBooking, overlay = null } = {}) {
   const { doctors: availableDoctors } = useAppState();
   const booking = location.state || presetBooking || {};
   const doctor = availableDoctors.find((item) => item.id === booking.doctorId) || getDoctor(booking.doctorId);
-  const date = booking.date || 'Marți, 27 octombrie';
+  const date = booking.date || 'Marți, 10 noiembrie';
   const time = booking.time || '10:30';
   return <AppShell activeNav="home" showNav={false} className="confirm-page">
     <div className="flow-topbar"><Link className="back-link" to="/calendar" state={{ doctorId: doctor.id }}><ArrowLeft size={18} /> Înapoi</Link><Brand small /><span className="secure-indicator"><ShieldCheck size={15} /> Securizat</span></div>
     <div className="booking-progress booking-progress--compact"><span className="progress-step is-done"><i><Check size={13} /></i><b>Medic</b></span><span className="progress-line is-done" /><span className="progress-step is-done"><i><Check size={13} /></i><b>Data și ora</b></span><span className="progress-line is-done" /><span className="progress-step is-current"><i>3</i><b>Confirmare</b></span></div>
     <PageHeading eyebrow="Ultimul pas" title="Confirmă programarea" description="Verifică detaliile înainte de confirmare." />
     <section className="confirmation-card"><div className="confirmation-doctor"><DoctorAvatar doctor={doctor} size="large" /><div><span className="appointment-kind">Consultație · {doctor.specialty}</span><h2>{doctor.name}</h2><span className="confirmed-rating"><Star size={14} fill="currentColor" /> {doctor.rating} · {doctor.experience}</span></div></div><div className="confirmation-divider" /><div className="confirmation-details"><div><CalendarDays size={18} /><span>Data</span><b>{date}</b></div><div><Clock3 size={18} /><span>Ora</span><b>{time}</b></div><div><MapPin size={18} /><span>Clinica</span><b>{doctor.clinic || 'Modus Vivendi'}, Chișinău</b></div></div><div className="confirmation-price"><span>Prețul consultației</span><b>{formatPrice(doctor.price)}</b></div></section>
-    <div className="confirmation-reminder"><Bell size={18} /><p>Îți vom trimite o reamintire înainte de vizită, prin notificare sau SMS.</p><Check size={18} /></div>
+    <div className="confirmation-reminder"><Bell size={18} /><p>Îți vom trimite o reamintire prin e-mail sau notificare, cu 24 de ore înainte.</p><Check size={18} /></div>
     <Button className="confirm-button" onClick={() => navigate('/succes', { state: { doctorId: doctor.id, date, time } })}>Confirmă programarea <ArrowRight size={18} /></Button>
     <p className="cancel-note">Poți anula sau reprograma vizita din secțiunea „Programările mele”.</p>
     {overlay}
@@ -226,7 +226,7 @@ export function SuccessPage() {
   const { doctors: availableDoctors } = useAppState();
   const booking = location.state || {};
   const doctor = availableDoctors.find((item) => item.id === booking.doctorId) || getDoctor(booking.doctorId);
-  const date = booking.date || 'Marți, 27 octombrie';
+  const date = booking.date || 'Marți, 10 noiembrie';
   const time = booking.time || '10:30';
   return <AppShell showNav={false} className="success-page">
     <div className="success-brand"><Brand /></div>

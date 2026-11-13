@@ -22,12 +22,12 @@ export function OfflinePage() {
 }
 
 export function SlotUnavailablePage() {
-  const [selected, setSelected] = useState('11:00');
+  const [selected, setSelected] = useState('12:00');
   const navigate = useNavigate();
-  const alternatives = ['11:00', '11:30', '12:00'];
-  return <ErrorLayout icon={CalendarClock} eyebrow="Interval ocupat" title="Ora nu mai este disponibilă" description="Un alt pacient a rezervat acest interval. Alege una dintre orele libere de mai jos.">
-    <section className="alternative-card"><div className="alternative-title"><span><CalendarClock size={17} /> Marți, 27 octombrie</span><span className="availability-label"><i /> Ore libere</span></div><div className="alternative-slots">{alternatives.map((time) => <button key={time} className={selected === time ? 'is-selected' : ''} onClick={() => setSelected(time)}>{time}</button>)}</div></section>
-    <Button onClick={() => navigate('/confirmare', { state: { doctorId: 'ana-popescu', date: 'Marți, 27 octombrie', time: selected } })}>Alege ora {selected} <ArrowRight size={18} /></Button>
+  const alternatives = ['12:00', '13:00', '14:30'];
+  return <ErrorLayout icon={CalendarClock} eyebrow="Interval ocupat" title="Ora nu mai este disponibilă" description="Un alt pacient a rezervat ora 10:30. Alege una dintre orele libere de mai jos.">
+    <section className="alternative-card"><div className="alternative-title"><span><CalendarClock size={17} /> Marți, 10 noiembrie</span><span className="availability-label"><i /> Ore libere</span></div><div className="alternative-slots">{alternatives.map((time) => <button key={time} className={selected === time ? 'is-selected' : ''} onClick={() => setSelected(time)}>{time}</button>)}</div></section>
+    <Button onClick={() => navigate('/confirmare', { state: { doctorId: 'ana-popescu', date: 'Marți, 10 noiembrie', time: selected } })}>Alege ora {selected} <ArrowRight size={18} /></Button>
     <button className="error-text-link" onClick={() => navigate('/calendar')}><ArrowLeft size={15} /> Vezi calendarul complet</button>
   </ErrorLayout>;
 }

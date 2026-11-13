@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { demoToday, doctors as seedDoctors, occupiedSlots, timeSlots } from './data.js';
 
-const STORAGE_KEY = 'medtime-demo-state-v1';
+const STORAGE_KEY = 'medtime-demo-state-v2';
 const tones = ['lavender', 'mint', 'peach', 'blue', 'teal'];
 
 export const sessionDoctorId = 'ana-popescu';
@@ -9,29 +9,50 @@ export const sessionDoctorId = 'ana-popescu';
 export const scheduleDays = [
   { key: '2026-11-08', short: 'Dum', date: '8', label: 'Duminică, 8 noiembrie 2026' },
   { key: '2026-11-09', short: 'Lun', date: '9', label: 'Luni, 9 noiembrie 2026' },
-  { key: '2026-11-10', short: 'Mar', date: '10', label: 'Marți, 10 noiembrie 2026', empty: true },
+  { key: '2026-11-10', short: 'Mar', date: '10', label: 'Marți, 10 noiembrie 2026' },
   { key: '2026-11-11', short: 'Mie', date: '11', label: 'Miercuri, 11 noiembrie 2026' },
   { key: '2026-11-12', short: 'Joi', date: '12', label: 'Joi, 12 noiembrie 2026' },
   { key: '2026-11-13', short: 'Vin', date: '13', label: 'Vineri, 13 noiembrie 2026' },
-  { key: '2026-11-14', short: 'Sâm', date: '14', label: 'Sâmbătă, 14 noiembrie 2026' },
+  { key: '2026-11-14', short: 'Sâm', date: '14', label: 'Sâmbătă, 14 noiembrie 2026', empty: true },
 ];
 
 const people = ['Ion Cebotari', 'Maria Lungu', 'Victor Cojocaru', 'Elena Moraru', 'Andrei Botnari', 'Sofia Rusu', 'Petru Munteanu', 'Ana Grițco', 'Dumitru Luca', 'Olga Mocanu', 'Nicolae Russu', 'Irina Bivol'];
 const reasons = ['Control periodic', 'Dureri în piept', 'Tensiune arterială', 'ECG de control', 'Consultație inițială', 'Rezultate analize', 'Amețeli'];
 const visitStatuses = ['Confirmată', 'În așteptare', 'Confirmată', 'Confirmată', 'Anulată', 'În așteptare', 'Confirmată'];
+/** Programul Dr. Ana Popescu. Orele ocupate se potrivesc cu sloturile din Calendarul pacientului. */
 const dayPlan = {
   '2026-11-08': ['09:00', '09:30', '10:30', '11:00', '13:00', '15:00', '16:00'],
   '2026-11-09': ['09:00', '10:00', '11:00', '12:00', '14:00', '16:00'],
-  '2026-11-10': [],
+  // Marți, 10 noiembrie: ziua programării principale (Ana Șerban, 10:30).
+  '2026-11-10': [
+    { time: '09:00', patient: 'Ion Cebotari', reason: 'Control periodic', status: 'Confirmată' },
+    { time: '09:30', patient: 'Maria Lungu', reason: 'Dureri în piept', status: 'În așteptare' },
+    { time: '10:30', patient: 'Ana Șerban', reason: 'Consultație cardiologie', status: 'Confirmată', currentPatient: true },
+    { time: '11:00', patient: 'Elena Moraru', reason: 'ECG de control', status: 'Confirmată' },
+    { time: '11:30', patient: 'Andrei Botnari', reason: 'Consultație inițială', status: 'În așteptare' },
+    { time: '14:00', patient: 'Sofia Rusu', reason: 'Rezultate analize', status: 'Confirmată' },
+    { time: '15:00', patient: 'Petru Munteanu', reason: 'Tensiune arterială', status: 'Confirmată' },
+  ],
   '2026-11-11': ['09:30', '10:30', '11:30', '14:00', '15:00'],
-  '2026-11-12': ['09:00', '09:30', '10:00', '11:00', '13:00', '14:30', '16:00'],
+  // Joi, 12 noiembrie: exemplul de blocare 10:00–11:00 se suprapune cu Victor Cojocaru la 10:30.
+  '2026-11-12': [
+    { time: '09:00', patient: 'Olga Mocanu', reason: 'Control periodic', status: 'Confirmată' },
+    { time: '09:30', patient: 'Nicolae Russu', reason: 'Rezultate analize', status: 'În așteptare' },
+    { time: '10:30', patient: 'Victor Cojocaru', reason: 'Tensiune arterială', status: 'Confirmată' },
+    { time: '11:00', patient: 'Irina Bivol', reason: 'ECG de control', status: 'Confirmată' },
+    { time: '13:00', patient: 'Dumitru Luca', reason: 'Consultație inițială', status: 'Confirmată' },
+    { time: '14:30', patient: 'Ana Grițco', reason: 'Amețeli', status: 'În așteptare' },
+    { time: '16:00', patient: 'Sofia Rusu', reason: 'Control periodic', status: 'Confirmată' },
+  ],
   '2026-11-13': ['09:00', '10:30', '11:30', '13:00', '15:00', '16:00'],
-  '2026-11-14': ['10:00', '11:00', '12:00', '14:00', '15:00'],
+  '2026-11-14': [],
 };
 
 function buildSchedule() {
   let cursor = 0;
-  return Object.entries(dayPlan).flatMap(([date, times]) => times.map((time) => {
+  return Object.entries(dayPlan).flatMap(([date, times]) => times.map((entry) => {
+    if (typeof entry === 'object') return { id: `${date}-${entry.time}`, date, ...entry };
+    const time = entry;
     const visit = {
       id: `${date}-${time}`,
       date,
@@ -212,7 +233,7 @@ export function displayAvailability(doctor, blocks, schedule = []) {
   const match = String(doctor.availability).match(/(\d{2}:\d{2})/);
   if (!String(doctor.availability).startsWith('Azi') || !match) return doctor.availability;
   const isOccupied = (time) => occupiedSlots.includes(time)
-    || (doctor.id === sessionDoctorId && schedule.some((visit) => visit.date === demoToday && visit.time === time && isOpenVisit(visit)));
+    || (doctor.id === sessionDoctorId && schedule.some((visit) => visit.date === demoToday && visit.time === time && isOpenVisit(visit) && !visit.currentPatient));
   if (!isOccupied(match[1]) && !isSlotBlocked(blocks, doctor.id, demoToday, match[1])) return doctor.availability;
   const next = timeSlots.find((time) => toMinutes(time) > toMinutes(match[1]) && !isOccupied(time) && !isSlotBlocked(blocks, doctor.id, demoToday, time));
   return next ? `Azi, ${next}` : 'Fără intervale libere azi';

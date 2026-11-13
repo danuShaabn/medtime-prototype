@@ -700,3 +700,8 @@ button:disabled{cursor:not-allowed;opacity:.55}
   .appointments-page .cancel-banner{max-width:720px}
 }
 .error-text-link--waiting{cursor:default;color:var(--muted)}
+/* Calendar: „azi” cu contur, ziua selectată plină */
+.date-option.is-today{border-color:var(--brand)}
+.date-option.is-selected{border-color:var(--brand-strong);background:var(--brand-strong)}
+.date-option.is-selected span,.date-option.is-selected b{color:#fff}
+.date-option.is-selected i{background:#fff}

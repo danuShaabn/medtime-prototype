@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { AppShell, Button, Field, PageHeading } from '../components.jsx';
-import { specialties } from '../data.js';
+import { demoToday, specialties } from '../data.js';
 import {
   activeVisitCount,
   doctorCountLabel,
@@ -46,7 +46,7 @@ function DaySelector({ dayIndex, onChange }) {
       <button type="button" className="icon-button" aria-label="Ziua următoare" disabled={dayIndex === scheduleDays.length - 1} onClick={() => onChange(dayIndex + 1)}><ChevronRight size={18} /></button>
     </div>
     <div className="day-strip" role="group" aria-label="Zilele săptămânii">
-      {scheduleDays.map((item, index) => <button type="button" key={item.key} className={`date-option ${dayIndex === index ? 'is-selected' : ''}`} aria-pressed={dayIndex === index} onClick={() => onChange(index)}>
+      {scheduleDays.map((item, index) => <button type="button" key={item.key} className={`date-option${dayIndex === index ? ' is-selected' : ''}${item.key === demoToday ? ' is-today' : ''}`} aria-pressed={dayIndex === index} aria-current={item.key === demoToday ? 'date' : undefined} onClick={() => onChange(index)}>
         <span>{item.short}</span><b>{item.date}</b><i />
       </button>)}
     </div>
@@ -56,7 +56,7 @@ function DaySelector({ dayIndex, onChange }) {
 export function SchedulePage() {
   const { doctors, schedule, blocks, cancelVisit } = useAppState();
   const doctor = doctors.find((item) => item.id === sessionDoctorId) || doctors[0];
-  const [dayIndex, setDayIndex] = useState(0);
+  const [dayIndex, setDayIndex] = useState(() => Math.max(0, scheduleDays.findIndex((item) => item.key === '2026-11-10')));
   const day = scheduleDays[dayIndex];
   const visits = schedule.filter((visit) => visit.date === day.key).slice().sort((a, b) => a.time.localeCompare(b.time));
   return <AppShell activeNav="schedule" className="schedule-page">
@@ -157,10 +157,10 @@ export function BlockHoursPage() {
           <option value="Altul">Altul</option>
         </select>
       </Field>
-      <p className="form-hint">Exemplu: 8 noiembrie are programări (vei vedea avertismentul), iar 10 noiembrie este o zi fără vizite.</p>
+      <p className="form-hint">Exemplu: 12 noiembrie are programări (vei vedea avertismentul), iar 14 noiembrie este o zi fără vizite.</p>
       {pending && <div className="warning-panel" role="alert">
-        <b>{pending.overlaps.length === 1 ? 'Există deja o programare în acest interval.' : `Există deja ${pending.overlaps.length} programări în acest interval.`}</b>
-        <p>{pending.overlaps.map((visit) => `${visit.patient} la ${visit.time}`).join(', ')}. Dacă blochezi intervalul, programarea devine „Anulată de medic”, iar pacientul este notificat și i se oferă reprogramare.</p>
+        <b>{pending.overlaps.length === 1 ? 'Există deja o programare în acest interval' : `Există deja ${pending.overlaps.length} programări în acest interval`}: {pending.overlaps.map((visit) => `${visit.patient}, ${visit.time}`).join('; ')}.</b>
+        <p>Dacă blochezi intervalul, programarea devine „Anulată de medic”, iar pacientul este notificat și i se oferă reprogramare.</p>
         <div className="row-actions">
           <Button type="button" onClick={() => saveBlock(pending.block, pending.overlaps)}>Blochează și anulează</Button>
           <Button type="button" variant="outline" onClick={() => setPending(null)}>Renunță</Button>
@@ -323,13 +323,13 @@ export function AdminDirectoryPage() {
 }
 
 const weekBars = [
-  { label: 'Lun', value: 14 },
-  { label: 'Mar', value: 16 },
-  { label: 'Mie', value: 12 },
-  { label: 'Joi', value: 18 },
-  { label: 'Vin', value: 15 },
-  { label: 'Sâm', value: 6 },
-  { label: 'Dum', value: 5 },
+  { label: 'Lun', day: '2', value: 14 },
+  { label: 'Mar', day: '3', value: 16 },
+  { label: 'Mie', day: '4', value: 12 },
+  { label: 'Joi', day: '5', value: 18 },
+  { label: 'Vin', day: '6', value: 15 },
+  { label: 'Sâm', day: '7', value: 6 },
+  { label: 'Dum', day: '8', value: 5 },
 ];
 
 const specialtyBars = [
@@ -347,7 +347,7 @@ function ColumnChart({ items, caption }) {
   const max = Math.max(...items.map((item) => item.value));
   const gap = 12;
   const barWidth = (width - gap * (items.length + 1)) / items.length;
-  return <svg className="chart" viewBox={`0 0 ${width} ${height + 32}`} role="img" aria-label={caption}>
+  return <svg className="chart" viewBox={`0 0 ${width} ${height + 48}`} role="img" aria-label={caption}>
     <title>{caption}</title>
     {items.map((item, index) => {
       const barHeight = Math.max(6, (item.value / max) * (height - 28));
@@ -356,7 +356,7 @@ function ColumnChart({ items, caption }) {
       return <g key={item.label}>
         <text x={x + barWidth / 2} y={y - 6} textAnchor="middle" fontSize="15" fontWeight="700" fontFamily="Inter, Arial, sans-serif" fill="#153b56">{item.value}</text>
         <rect x={x} y={y} width={barWidth} height={barHeight} rx="5" fill="#14808d" />
-        <text x={x + barWidth / 2} y={height + 18} textAnchor="middle" fontSize="14" fontFamily="Inter, Arial, sans-serif" fill="#557181">{item.label}</text>
+        <text x={x + barWidth / 2} y={height + 18} textAnchor="middle" fontSize="14" fontFamily="Inter, Arial, sans-serif" fill="#557181"><tspan x={x + barWidth / 2}>{item.label}</tspan>{item.day && <tspan x={x + barWidth / 2} dy="17">{item.day}</tspan>}</text>
       </g>;
     })}
   </svg>;
@@ -383,7 +383,7 @@ export function ReportsPage() {
       <article className="kpi-card"><span>Ora medie de așteptare</span><b>14 min</b><small>calculată pentru vizitele finalizate</small></article>
     </section>
     <section className="chart-grid">
-      <article className="chart-card"><h2>Programări pe zile</h2><ColumnChart items={weekBars} caption="Programări pe zile: luni 14, marți 16, miercuri 12, joi 18, vineri 15, sâmbătă 6, duminică 5" /></article>
+      <article className="chart-card"><h2>Programări pe zile</h2><ColumnChart items={weekBars} caption="Programări pe zile, 2–8 noiembrie 2026: luni 2 – 14, marți 3 – 16, miercuri 4 – 12, joi 5 – 18, vineri 6 – 15, sâmbătă 7 – 6, duminică 8 – 5; total 86" /></article>
       <article className="chart-card"><h2>Programări pe specialități</h2><HorizontalChart items={specialtyBars} caption="Programări pe specialități, din 2 până în 8 noiembrie 2026" /></article>
     </section>
     <p className="report-note">Datele din rapoarte sunt fictive și nu se schimbă când anulezi o programare în demonstrație.</p>
