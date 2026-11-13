@@ -83,6 +83,7 @@ export const appointments = {
     { doctorId: 'elena-ciobanu', date: 'Luni, 12 octombrie', time: '09:30', type: 'Consultație dermatologică' },
   ],
   Anulate: [
+    { doctorId: 'ana-popescu', date: 'Marți, 10 noiembrie', month: 'nov.', time: '10:30', type: 'Consultație cardiologică', status: 'Anulată de medic', byDoctor: true },
     { doctorId: 'andrei-munteanu', date: 'Miercuri, 7 octombrie', time: '13:00', type: 'Consultație neurologică' },
   ],
 };

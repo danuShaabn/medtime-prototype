@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, CalendarClock, Clock3, RefreshCw, WifiOff } from 'lucide-react';
 import { AppShell, Brand, Button } from '../components.jsx';
 
-function ErrorLayout({ icon: Icon, eyebrow, title, description, children, className = '' }) {
+export function ErrorLayout({ icon: Icon, eyebrow, title, description, children, className = '' }) {
   return <AppShell bare showNav={false} className={`error-page ${className}`}>
     <div className="error-brand"><Brand /></div>
     <div className="error-visual"><span className="error-orbit" /><span className="error-icon"><Icon size={42} strokeWidth={1.7} /></span><i className="error-spark error-spark--one" /><i className="error-spark error-spark--two" /></div>

@@ -82,6 +82,43 @@ const extraDoctors = [
   },
 ];
 
+extraDoctors.push(
+  {
+    id: 'victor-ceban',
+    name: 'Dr. Victor Ceban',
+    specialty: 'Cardiologie',
+    rating: '4.8',
+    reviews: 96,
+    price: 600,
+    experience: '15 ani experiență',
+    initials: 'VC',
+    tone: 'blue',
+    availability: 'Mar, 10 nov., 11:30',
+    location: 'Modus Vivendi · Chișinău',
+    clinic: 'Modus Vivendi',
+    description: 'Consultații cardiologice, ECG și monitorizarea tensiunii arteriale, cu explicații pe înțelesul pacientului.',
+    education: 'Universitatea de Stat de Medicină și Farmacie „Nicolae Testemițanu”',
+    languages: ['Română', 'Rusă'],
+  },
+  {
+    id: 'natalia-rotaru',
+    name: 'Dr. Natalia Rotaru',
+    specialty: 'Cardiologie',
+    rating: '4.9',
+    reviews: 71,
+    price: 680,
+    experience: '11 ani experiență',
+    initials: 'NR',
+    tone: 'peach',
+    availability: 'Mie, 11 nov., 09:00',
+    location: 'Medpark · Chișinău',
+    clinic: 'Medpark',
+    description: 'Prevenția bolilor cardiovasculare și planuri de îngrijire adaptate stilului de viață.',
+    education: 'Universitatea de Stat de Medicină și Farmacie „Nicolae Testemițanu”',
+    languages: ['Română', 'Engleză'],
+  },
+);
+
 const seedReviews = [
   { id: 'rev-maria', author: 'Maria P.', doctorId: 'ana-popescu', stars: 5, text: 'Consultația a fost atentă și toate explicațiile au fost foarte clare.', date: '12 octombrie 2026', status: 'Aprobată' },
   { id: 'rev-radu', author: 'Radu C.', doctorId: 'ana-popescu', stars: 3, text: 'Programarea a început cu întârziere, iar sala de așteptare era aglomerată.', date: '20 octombrie 2026', status: 'Ascunsă' },
@@ -145,7 +182,9 @@ function loadInitial() {
     return {
       role,
       blocks: Array.isArray(saved.blocks) ? saved.blocks : [],
-      doctors: Array.isArray(saved.doctors) && saved.doctors.length ? saved.doctors.map(normalizeDoctor) : seed.doctors,
+      doctors: Array.isArray(saved.doctors) && saved.doctors.length
+        ? [...saved.doctors.map(normalizeDoctor), ...seed.doctors.filter((doctor) => !saved.doctors.some((item) => item.id === doctor.id))]
+        : seed.doctors,
       clinics: Array.isArray(saved.clinics) && saved.clinics.length ? saved.clinics : seed.clinics,
       reviews: Array.isArray(saved.reviews) && saved.reviews.length ? saved.reviews : seed.reviews,
       schedule: Array.isArray(saved.schedule) && saved.schedule.length ? saved.schedule : seed.schedule,

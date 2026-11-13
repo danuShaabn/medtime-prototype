@@ -66,7 +66,6 @@ export function AuthPage() {
   const [method, setMethod] = useState('telefon');
   const [value, setValue] = useState('');
   const [error, setError] = useState('');
-  const [resetMessage, setResetMessage] = useState('');
   const navigate = useNavigate();
   const submit = (event) => {
     event.preventDefault();
@@ -75,7 +74,6 @@ export function AuthPage() {
     const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
     if (method === 'telefon' ? !validPhone : !validEmail) {
       setError(method === 'telefon' ? 'Număr de telefon invalid. Verifică și încearcă din nou.' : 'Adresă de e-mail invalidă. Verifică și încearcă din nou.');
-      setResetMessage('');
       return;
     }
     setError('');
@@ -87,15 +85,10 @@ export function AuthPage() {
     <div className="auth-tabs"><button className={mode === 'intrare' ? 'is-active' : ''} onClick={() => { setMode('intrare'); setError(''); }}>Autentificare</button><button className={mode === 'creare' ? 'is-active' : ''} onClick={() => { setMode('creare'); setError(''); }}>Înregistrare</button></div>
     <div className="method-switch"><button className={method === 'telefon' ? 'is-active' : ''} onClick={() => { setMethod('telefon'); setValue(''); setError(''); }}><Phone size={16} /> Telefon</button><button className={method === 'email' ? 'is-active' : ''} onClick={() => { setMethod('email'); setValue(''); setError(''); }}><Mail size={16} /> E-mail</button></div>
     <form className="auth-form" onSubmit={submit} noValidate>
-      <Field label={method === 'telefon' ? 'Număr de telefon' : 'Adresă de e-mail'} icon={method === 'telefon' ? Phone : Mail} type={method === 'email' ? 'email' : 'tel'} placeholder={method === 'telefon' ? '+373 60 123 456' : 'nume@email.md'} value={value} onChange={(event) => { setValue(event.target.value); setError(''); setResetMessage(''); }} error={error} />
+      <Field label={method === 'telefon' ? 'Număr de telefon' : 'Adresă de e-mail'} icon={method === 'telefon' ? Phone : Mail} type={method === 'email' ? 'email' : 'tel'} placeholder={method === 'telefon' ? '+373 60 123 456' : 'nume@email.md'} value={value} onChange={(event) => { setValue(event.target.value); setError(''); }} error={error} />
       <Button type="submit" className="auth-submit">Continuă <ArrowRight size={18} /></Button>
     </form>
-    {mode === 'intrare' && <div className="forgot-password"><button type="button" onClick={() => {
-      const normalized = value.replace(/[\s()-]/g, '');
-      const valid = method === 'telefon' ? /^(?:\+373\d{8}|0\d{8})$/.test(normalized) : /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
-      if (valid) setResetMessage(method === 'telefon' ? `Ți-am trimis prin SMS un cod de resetare a parolei la ${value.trim()}. Codul este valabil 10 minute.` : `Ți-am trimis un link de resetare a parolei la ${value.trim()}. Verifică și dosarul Spam.`);
-      else setResetMessage(method === 'telefon' ? 'Introdu mai sus numărul de telefon al contului, apoi apasă din nou „Ai uitat parola?”. Îți vom trimite prin SMS un cod de resetare.' : 'Introdu mai sus adresa de e-mail a contului, apoi apasă din nou „Ai uitat parola?”. Îți vom trimite un link de resetare.');
-    }}>Ai uitat parola?</button>{resetMessage && <p className="forgot-password-message" role="status">{resetMessage}</p>}</div>}
+    {mode === 'intrare' && <div className="forgot-password"><Link to="/resetare-parola">Ai uitat parola?</Link></div>}
     <div className="privacy-note"><ShieldCheck size={17} /><span>Datele tale personale sunt păstrate în siguranță.</span></div>
     <p className="auth-terms">Continuând, accepți <a href="#termeni">termenii de utilizare</a> și <a href="#confidentialitate">politica de confidențialitate</a>.</p>
   </AppShell>;
@@ -177,7 +170,7 @@ export function DoctorProfilePage() {
     <section className="doctor-profile-card"><DoctorAvatar doctor={doctor} size="hero" /><div className="verified-label"><BadgeCheck size={15} /> Medic verificat</div><h1>{doctor.name}</h1><p className="profile-specialty">{doctor.specialty}</p><div className="profile-rating-row"><span><Star size={16} fill="currentColor" /><b>{doctor.rating}</b> ({doctor.reviews} recenzii)</span><i /><span>{doctor.experience}</span></div><div className="profile-location"><MapPin size={16} /> {doctor.clinic || 'Modus Vivendi'} · Chișinău</div></section>
     <section className="profile-content-section"><h2>Despre medic</h2><p>{doctor.description}</p><div className="profile-facts"><div><span>Experiență</span><b>{doctor.experience}</b></div><div><span>Limbi vorbite</span><b>{doctor.languages.join(', ')}</b></div></div></section>
     <section className="profile-content-section"><div className="section-title-row"><h2>Recenzii</h2><span className="review-average"><Star size={15} fill="currentColor" /> {doctor.rating}</span></div>{doctorReviews.length ? doctorReviews.map((review) => <article className="review-card" key={review.id}><div className="review-top"><span className="review-avatar">{review.author.split(' ').map((part) => part[0]).join('').slice(0, 2)}</span><div><b>{review.author}</b><span>Pacient · {review.date}</span></div><span className="review-stars">{'★'.repeat(review.stars)}</span></div><p>„{review.text}”</p></article>) : <div className="empty-state"><b>Nu există recenzii aprobate pentru acest medic.</b></div>}</section>
-    <div className="sticky-action"><div><small>Consultație</small><strong>{formatPrice(doctor.price)}</strong></div><Button onClick={() => navigate('/calendar', { state: { doctorId: doctor.id } })}>Programează <ArrowRight size={18} /></Button></div>
+    <div className="sticky-action"><div><small>Consultație</small><strong>{formatPrice(doctor.price)}</strong></div><Button onClick={() => navigate(doctor.active === false ? '/eroare/medic-indisponibil' : '/calendar', { state: { doctorId: doctor.id } })}>Programează <ArrowRight size={18} /></Button></div>
   </AppShell>;
 }
 
@@ -207,11 +200,11 @@ export function CalendarPage() {
   </AppShell>;
 }
 
-export function ConfirmPage() {
+export function ConfirmPage({ booking: presetBooking, overlay = null } = {}) {
   const location = useLocation();
   const navigate = useNavigate();
   const { doctors: availableDoctors } = useAppState();
-  const booking = location.state || {};
+  const booking = location.state || presetBooking || {};
   const doctor = availableDoctors.find((item) => item.id === booking.doctorId) || getDoctor(booking.doctorId);
   const date = booking.date || 'Marți, 27 octombrie';
   const time = booking.time || '10:30';
@@ -223,6 +216,7 @@ export function ConfirmPage() {
     <div className="confirmation-reminder"><Bell size={18} /><p>Îți vom trimite o reamintire înainte de vizită, prin notificare sau SMS.</p><Check size={18} /></div>
     <Button className="confirm-button" onClick={() => navigate('/succes', { state: { doctorId: doctor.id, date, time } })}>Confirmă programarea <ArrowRight size={18} /></Button>
     <p className="cancel-note">Poți anula sau reprograma vizita din secțiunea „Programările mele”.</p>
+    {overlay}
   </AppShell>;
 }
 
